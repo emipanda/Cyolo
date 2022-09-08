@@ -1,6 +1,6 @@
 # Cyolo Words Histogram
 ## Install 
-<pre>pip install -r requirments.txt</pre>
+<pre>pip install -r requirements.txt</pre>
 
 ## Run
 <pre>python3 main_server.py </pre>
