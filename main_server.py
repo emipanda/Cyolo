@@ -1,26 +1,38 @@
-import websockets
-import asyncio
+from concurrent.futures import ThreadPoolExecutor
 from rest_api_server import run_flask
 from app import extract_words
+import websockets
 import threading
+import asyncio
+
 
 PORT = 7890
 
 print("Server listening on Port " + str(PORT))
 
+executor = ThreadPoolExecutor()
 
-async def words_server(websocket):
+
+async def words_server_listener(websocket):
+
     print("A client just connected")
-    try:
-        async for message in websocket:
-            print("Received message from client: " + message)
-            extract_words(message)
-    except websockets.exceptions.ConnectionClosed as e:
-        print("A client just disconnected")
+    with ThreadPoolExecutor() as pool:
+        tasks = []
+        loop = asyncio.get_running_loop()
+        try:
+            async for message in websocket:
+                tasks.append(
+                    loop.run_in_executor(pool, extract_words, message)
+                )
+                for task in asyncio.as_completed(tasks):
+                    await task
+
+        except websockets.exceptions.ConnectionClosed as e:
+            print("A client just disconnected")
 
 
 async def start_ws_server():
-    async with websockets.serve(words_server, "localhost", PORT):
+    async with websockets.serve(words_server_listener, "localhost", PORT):
         await asyncio.Future()
 
 
